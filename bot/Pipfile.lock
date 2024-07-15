@@ -1,0 +1,30 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "6a284b33b57684408c512cd77eafab4ae19cbc546c4a39edb4b35360ec51e6d6"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.12"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "steamsignin": {
+            "hashes": [
+                "sha256:c1b6253ff4e73dcad8c97ee0c5bb2cad0355c7ab1b0d77fa11ec88c6a420c01f",
+                "sha256:f95cfcbf2c07e2b6fff8d129844981143592347532c931681a2cdd59c032e343"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.6'",
+            "version": "==1.1.1"
+        }
+    },
+    "develop": {}
+}
