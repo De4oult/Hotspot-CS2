@@ -17,7 +17,6 @@ app = Sanic(__name__)
 CORS(app)
 
 steam_key: str = os.getenv('STEAM_API_KEY')
-bot_token: str = os.getenv('BOT_TOKEN')
 
 @app.route('/confirm_steam', methods = ['GET'])
 async def confirm_steam(request: Request):
@@ -25,18 +24,12 @@ async def confirm_steam(request: Request):
 
     player_data = requests.get(f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={steam_key}&steamids={steam_id}').json().get('response').get('players')[0]
 
-    playername = player_data.get('personaname')
-
     await supabase.push('players', {
         'id' : request.args.get('tg_id'),
         'steam_id' : steam_id,
-        'playername' : playername,
+        'playername' : player_data.get('personaname'),
+        'avatar' : player_data.get('avatar'),
         'username' : request.args.get('username')
-    })
-
-    requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', data = { 
-        'chat_id' : request.args.get('tg_id'),
-        'text' : f'event:registration_complete,playername:{playername}'
     })
 
     return html('<h1 style="text-align: center; font-size: 2rem;">Это окно можно закрыть</h1>', status = 200)

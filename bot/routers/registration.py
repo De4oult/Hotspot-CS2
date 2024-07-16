@@ -1,6 +1,7 @@
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import Command
-from aiogram.types import Message
-from aiogram import Router
+from aiogram.types import Message, InlineKeyboardButton, CallbackQuery, KeyboardButton, ReplyKeyboardMarkup
+from aiogram import Router, F
 
 from fetch import supabase
 
@@ -13,7 +14,7 @@ server_url: str = os.getenv('SERVER_URL')
 router = Router()
 
 @router.message(Command('start'))
-async def start_command(message: Message, state) -> None:
+async def start_command(message: Message) -> None:
     if len(await supabase.get_by_id('players', message.from_user.id)) != 0:
         return
 
@@ -28,15 +29,48 @@ async def start_command(message: Message, state) -> None:
 
     auth_url = f'https://steamcommunity.com/openid/login?{urlencode(steam_auth_params)}'
 
-    await message.answer(f'Добро пожаловать в <b>HotSpot</b>! \n\n<b>HotSpot</b> - сервис для проведения небольших турниров по игре Counter-Strike 2. \n\nДля регистрации <a href="{auth_url}">авторизуйтесь в Steam</a>', disable_web_page_preview = True)
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text = 'Далее',
+        callback_data = 'registred'
+    ))
 
-@router.message(lambda message: 'event:registration_complete' in message.text)
-async def handle_registration_event(message: Message):
-    data = message.text.split(',')
-    event_type = data[0].split(':')[1]
-    playername = data[1].split(':')[1]
+    await message.answer(
+        f'Добро пожаловать в <b>HotSpot</b>! \n\n<b>HotSpot</b> - сервис для проведения небольших турниров по игре Counter-Strike 2. \n\nДля регистрации <a href="{auth_url}">авторизуйтесь в Steam</a>', 
+        disable_web_page_preview = True,
+        reply_markup = builder.as_markup()
+    )
 
-    if event_type == 'registration_complete':
-        await message.answer(f'Регистрация завершена! \nПривет, <b>{playername}</b>')
+@router.callback_query(F.data == 'registred')
+async def registred_callback(callback: CallbackQuery) -> None:
+    users = await supabase.get_by_id('players', callback.from_user.id)
 
-    #fix
+    if len(users) == 0:
+        await callback.answer(
+            'Пройдите авторизацию', 
+            show_alert = True
+        )
+        
+        return
+    
+    if not users[0].get('beta'):
+        await callback.answer(
+            'Сожалеем, но у Вас нет доступа к закрытому тестированию', 
+            show_alert = True
+        )
+        
+        return
+
+    
+    menu_keyboard = [
+        [KeyboardButton(text = 'Турниры')],
+        [KeyboardButton(text = 'Команда'), KeyboardButton(text = 'Профиль')]
+    ]
+
+    await callback.message.answer(
+        'Регистрация в успешно завершена \n\nТеперь Вы можете создать команду и участвовать в матчах \n\nДобро пожаловать в <b>HotSpot</b>!', 
+        show_alert = True,
+        reply_markup = ReplyKeyboardMarkup(keyboard = menu_keyboard, resize_keyboard = True)
+    )
+
+    await callback.answer()
